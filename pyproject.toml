@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fastapi-sdk"
-version = "1.0.2"
+version = "1.0.3"
 description = ""
 authors = ["iYasha <33287747+iYasha@users.noreply.github.com>"]
 

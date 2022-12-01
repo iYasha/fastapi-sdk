@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 from sqlalchemy.sql import Select
 from sqlalchemy.sql.elements import BooleanClauseList
-from config import ModelType, db_connection
+from fastapi_sdk.config import ModelType, db_connection
 
 
 class BaseModifier(metaclass=abc.ABCMeta):

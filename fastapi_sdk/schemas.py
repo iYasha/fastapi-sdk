@@ -6,7 +6,7 @@ from typing import Optional
 from typing import TypeVar
 from uuid import UUID
 
-from config import DEFAULT_DATETIME_FORMAT
+from fastapi_sdk.config import DEFAULT_DATETIME_FORMAT
 from pydantic import BaseModel
 from pydantic.generics import GenericModel
 
