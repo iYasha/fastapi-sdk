@@ -1,25 +1,26 @@
-from typing import TypeVar
-import databases
+from enum import Enum
+from typing import Optional
 
-ModelType: TypeVar
-db_connection: databases.core.Database
-DEFAULT_DATETIME_FORMAT: str
-ENVIRONMENT: str = 'dev'
+from pydantic import BaseSettings
 
 
-def init_sdk(
-    model_type: TypeVar,
-    database_connection: databases.core.Database,
-    default_datetime_format: str,
-    environment: str = 'dev',
-) -> None:
-    global ModelType
-    global db_connection
-    global DEFAULT_DATETIME_FORMAT
-    global ENVIRONMENT
+class Environment(str, Enum):
+    PROD = 'production'
+    RC = 'rc'
+    STAGE = 'stage'
+    DEV = 'dev'
 
-    ModelType = model_type
-    db_connection = database_connection
-    DEFAULT_DATETIME_FORMAT = default_datetime_format
-    ENVIRONMENT = environment
 
+class Settings(BaseSettings):
+    """
+    Настройки из переменных окружения
+    """
+
+    # Base configuration for the application.
+    ENVIRONMENT: Optional[Environment] = None
+
+    # API configuration.
+    DEFAULT_DATETIME_FORMAT: str = '%Y-%m-%dT%H:%M:%S%z'
+
+
+settings = Settings()

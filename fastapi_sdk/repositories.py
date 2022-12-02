@@ -8,15 +8,16 @@ from typing import Type
 from typing import Union
 
 import sqlalchemy as sa
+from databases import Database
+from sqlalchemy import Table
 
 from sqlalchemy.sql import Select
 from sqlalchemy.sql.elements import BooleanClauseList
-from fastapi_sdk.config import ModelType, db_connection
 
 
 class BaseModifier(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def modify(self: 'BaseModifier', model: Type[ModelType], query: Select) -> Select:
+    def modify(self: 'BaseModifier', model: Type[Table], query: Select) -> Select:
         raise NotImplementedError
 
 
@@ -24,7 +25,7 @@ class WhereModifier(BaseModifier):
     def __init__(self: 'WhereModifier', **kwargs) -> None:
         self.fields = kwargs
 
-    def modify(self: 'WhereModifier', model: Type[ModelType], query: Select) -> Select:
+    def modify(self: 'WhereModifier', model: Type[Table], query: Select) -> Select:
         return query.where(
             sa.and_(
                 *[getattr(model, key) == value for key, value in self.fields.items()],
@@ -36,7 +37,7 @@ class ExpiredModifier(BaseModifier):
     def __init__(self, utc_now: Optional[datetime] = None) -> None:
         self.utc_now = utc_now or datetime.utcnow()
 
-    def modify(self: 'ExpiredModifier', model: Type[ModelType], query: Select) -> Select:
+    def modify(self: 'ExpiredModifier', model: Type[Table], query: Select) -> Select:
         return query.where(sa.and_(model.end_at >= self.utc_now, model.start_at <= self.utc_now))
 
 
@@ -45,12 +46,13 @@ class SortModifier(BaseModifier):
         self.field = field
         self.sort_type = sa.asc if sort_type == 'asc' else sa.desc
 
-    def modify(self: 'SortModifier', model: Type[ModelType], query: Select) -> Select:
+    def modify(self: 'SortModifier', model: Type[Table], query: Select) -> Select:
         return query.order_by(self.sort_type(getattr(model, self.field)))
 
 
 class BaseRepository:
-    model: Type[ModelType]
+    model: Type[Table]
+    db_connection: Database
 
     @classmethod
     async def get(
@@ -58,14 +60,14 @@ class BaseRepository:
         modifiers: List[BaseModifier],
     ) -> Optional[Dict[Any, Any]]:
         query = cls._modify_query(cls.get_base_query(), modifiers)
-        result = await db_connection.fetch_one(query)
+        result = await cls.db_connection.fetch_one(query)
         return dict(result) if result else None
 
     @classmethod
     async def create(cls: Type['BaseRepository'], **kwargs) -> None:
         # Issue: https://github.com/dropbox/sqlalchemy-stubs/issues/48
         query = sa.insert(cls.model).values(**kwargs)  # type: ignore[arg-type]
-        await db_connection.execute(query)
+        await cls.db_connection.execute(query)
 
     @classmethod
     async def update(
@@ -79,13 +81,13 @@ class BaseRepository:
             .where(cls.get_where_clause(**kwargs))
             .returning(*cls.model.__table__.columns)
         )
-        result = await db_connection.fetch_one(query)
+        result = await cls.db_connection.fetch_one(query)
         return dict(result) if result else None
 
     @classmethod
     async def delete(cls: Type['BaseRepository'], **kwargs) -> None:
         query = sa.delete(cls.model).where(cls.get_where_clause(**kwargs))  # type: ignore[arg-type]
-        await db_connection.execute(query)
+        await cls.db_connection.execute(query)
 
     @classmethod
     async def all(
@@ -93,7 +95,7 @@ class BaseRepository:
         modifiers: List[BaseModifier],
     ) -> List[Dict[Any, Any]]:
         query = cls._modify_query(cls.get_base_query(), modifiers)
-        result = await db_connection.fetch_all(query)
+        result = await cls.db_connection.fetch_all(query)
         return [dict(row) for row in result] if result else []
 
     @classmethod
@@ -127,4 +129,4 @@ class BaseRepository:
             sa.select([sa.func.count()]).select_from(cls.model),  # type: ignore[arg-type]
             modifiers,
         )
-        return await db_connection.fetch_val(query)
+        return await cls.db_connection.fetch_val(query)

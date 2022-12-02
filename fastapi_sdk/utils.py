@@ -8,7 +8,7 @@ from typing import Optional
 from uuid import UUID
 
 import aiosmtplib
-from fastapi_sdk.config import DEFAULT_DATETIME_FORMAT
+from fastapi_sdk.config import settings
 from fastapi import Request
 from fastapi.security import HTTPBearer
 
@@ -82,7 +82,7 @@ async def send_mail(
 class DefaultJSONEncoder(json.JSONEncoder):
     def default(self, o: Any) -> Any:  # noqa: ANN401, VNE001
         if isinstance(o, datetime):
-            return o.strftime(DEFAULT_DATETIME_FORMAT)
+            return o.strftime(settings.DEFAULT_DATETIME_FORMAT)
         elif isinstance(o, UUID):
             return str(o)
         return super().default(o)

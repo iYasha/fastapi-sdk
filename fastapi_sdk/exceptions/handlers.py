@@ -1,7 +1,7 @@
 import traceback
 from typing import List
 
-from fastapi_sdk.config import ENVIRONMENT
+from fastapi_sdk.config import settings, Environment
 from fastapi_sdk.exceptions.exceptions import AppException
 from fastapi.exceptions import HTTPException
 from fastapi.exceptions import RequestValidationError
@@ -47,7 +47,7 @@ def unexpected_exception_handler(request: Request, exc: Exception) -> DefaultRes
     """Обработчик любых непредвиденных и необработанных ошибок"""
 
     error_message = 'Возникла непредвиденная ошибка. Пожалуйста, обратитесь к администратору.'
-    if ENVIRONMENT == 'dev':
+    if settings.ENVIRONMENT == Environment.DEV:
         error_message = ''.join(
             traceback.format_exception(etype=type(exc), value=exc, tb=exc.__traceback__),
         )

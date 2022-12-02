@@ -6,14 +6,14 @@ from typing import Optional
 from typing import TypeVar
 from uuid import UUID
 
-from fastapi_sdk.config import DEFAULT_DATETIME_FORMAT
+from fastapi_sdk.config import settings
 from pydantic import BaseModel
 from pydantic.generics import GenericModel
 
 
 class BaseSchema(BaseModel):
     class Config:
-        json_encoders = {datetime: lambda dt: dt.strftime(DEFAULT_DATETIME_FORMAT)}
+        json_encoders = {datetime: lambda dt: dt.strftime(settings.DEFAULT_DATETIME_FORMAT)}
 
 
 BaseSchemaType = TypeVar('BaseSchemaType', bound=BaseSchema)
